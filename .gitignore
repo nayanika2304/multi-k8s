@@ -1,3 +1,5 @@
 complex/worker/node_modules
 /server/node_modules/
 /worker/node_modules/
+/server/node_modules/
+/server/node_modules/
