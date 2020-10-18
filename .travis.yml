@@ -1,37 +1,25 @@
-sudo: required
-language: generic
-
+sudo : required
 services:
   - docker
-
-before_install:
+env:
+  global:
+    - SHA=$(git rev-parse HEAD)
+    - CLOUDSDK_CORE_DISABLE_PROMPTS=1
+before_install :
+  - "UNUOGf/h3qe/9Yotxht6/jLN9TrkYdQmr4B4WSDd4g3cYB81LIey4KkKxQV72nZZfyh2UCmbSpHoBbWrijO2hSsoTwqeQju9P9fQp+IZaPxyZJUxu9nQHpB9ywZV21JFFCxO4nV/x1EPLrLf/VymeUtuB2NySrxf9+HYL2PK6lP/s5a/xMAml2wq4EdLdedmxIVXSpTNhm34ycWAhOn6/WOvFu7DPkSL0DLsx63dWnq89gAQZrtQdVNB1YTOfyuKfkWwFVSl6WdXpaUubpduc6wrwGXsJtlKkHrF7vusIfJtgxa2a1q/x0WuqXwO9PHZwRZTiCLPl81YAX98vUvi9UlRdVirQMsyABx8aCxw1un3HHYDYNiCVA5cQmfRXqQkjv7Ma9apL+ArM1q5aW/hP+JKHSngBVF86QCsqDq7ppf7MKHp8Rq3EjybEe9Pn9uhdYgfuJTVTROqVNUTucOcWU9bazKqAs0DrMPeOKcnG7RzuIUtr2cg3t911Qhf+HgNTpXcol3n9zuHkjDKzEyXzHtNwlqapCOV7DHc6JdnNIKWKbbSyuKfOME6GWOTXIRbDvUCBhHOmEEe6sPh4sa0bKN48phTt7XyiqKgCLr4EqhENLi1mJrCu8QxWCG0mu8O8egYBDjej8za4Zewjy0zAKhK1bD6wRbaTrxONEkA8TA="
+  - curl https://sdk.cloud.google.com | bash > /dev/null;
+  - source $HOME/google-cloud-sdk/path.bash.inc
+  - glcoud components update kubectl
+  - gcloud auth activate-service-account --key-file service-account.json
+  - gcloud config set project stone-arcade-292814
+  - gcloud config set compute /zone us-east1-b
+  - gcloud container clusters get credentials multi-cluster
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
   - docker build -t nayanika2304/react-test -f ./client/Dockerfile.dev ./client
-
 script:
-  - docker run -e CI=true nayanika2304/react-test npm run test
-
-after_success:
-  - docker build -t nayanika2304/multi-client ./client
-  - docker build -t nayanika2304/multi-nginx ./nginx
-  - docker build -t nayanika2304/multi-server ./server
-  - docker build -t nayanika2304/multi-worker ./worker
-  # Log in to the docker CLI
-  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
-  # Take those images and push them to docker hub
-  - docker push nayanika2304/multi-client
-  - docker push nayanika2304/multi-nginx
-  - docker push nayanika2304/multi-server
-  - docker push nayanika2304/multi-worker
-
+  - docker run -e CI=true nayanika2304/react-test npm test
 deploy:
-  edge: true
-  provider: elasticbeanstalk
-  region: 'us-east-2'
-  app: 'multi-docker'
-  env: 'MultiDocker-env'
-  bucket_name: 'elasticbeanstalk-us-east-2-859726620813'
-  bucket_path: 'docker-multi'
+  provider: script
+  script: bash ./deploy.sh
   on:
-    branch: master
-  access_key_id: $AWS_ACCESS_KEY
-  secret_access_key: $AWS_SECRET_KEY
+    branch : master
